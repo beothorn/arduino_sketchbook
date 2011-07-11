@@ -9,6 +9,8 @@
 #define D7 13
 
 #define CHANGE_TIME_BUTTON_PORT 6
+#define CHANGE_TIME_MINUS 5
+#define CHANGE_TIME_PLUS 4
 
 long previous_millis_value;
 long current_millis_value;
@@ -27,6 +29,8 @@ LiquidCrystal lcd(RS, RW, ENABLE, D4, D5, D6 ,D7);
 
 void setup(){
   pinMode(CHANGE_TIME_BUTTON_PORT,INPUT);
+  pinMode(CHANGE_TIME_MINUS,INPUT);
+  pinMode(CHANGE_TIME_PLUS,INPUT);
   Serial.begin(9600);
 }
 
@@ -85,8 +89,6 @@ void displayTime(){
   }
 }
 
-boolean changeTimeButtonLastState = false;
-
 void changeTimeButtonReleased(){
   if(changingHoursValue || changingMinutesValue || changingSecondsValue){
     if(changingHoursValue){
@@ -108,6 +110,41 @@ void changeTimeButtonReleased(){
   }
 }
 
+void normalizeClock(){
+  seconds = seconds % 60;
+  hours = hours % 24;
+  minutes = minutes % 60;
+}
+
+void minusPressed(){
+  if(changingHoursValue){
+    hours--;
+  }
+  if(changingMinutesValue){
+    minutes--;
+  }
+  if(changingSecondsValue){
+    seconds--;
+  }
+  normalizeClock();
+}
+
+void plusPressed(){
+  if(changingHoursValue){
+    hours++;
+  }
+  if(changingMinutesValue){
+    minutes++;
+  }
+  if(changingSecondsValue){
+    seconds++;
+  }
+  normalizeClock();
+}
+
+boolean changeTimeButtonLastState = false;
+boolean changeTimeMinusLastState = false;
+boolean changeTimePlusLastState = false;
 void checkButtons(){
   boolean changeTimeButtonState = digitalRead(CHANGE_TIME_BUTTON_PORT);
   boolean changeTimeButtonStateIsNotPressed = !changeTimeButtonState;
@@ -115,6 +152,21 @@ void checkButtons(){
     changeTimeButtonReleased();
   }
   changeTimeButtonLastState = changeTimeButtonState;
+  
+  boolean changeTimePlusState = digitalRead(CHANGE_TIME_PLUS);
+  boolean changeTimePlusStateIsNotPressed = !changeTimePlusState;
+  if(changeTimePlusLastState && changeTimePlusStateIsNotPressed){
+    plusPressed();
+  }
+  changeTimePlusLastState = changeTimePlusState;
+  
+  boolean changeTimeMinusState = digitalRead(CHANGE_TIME_MINUS);
+  boolean changeTimeMinusStateIsNotPressed = !changeTimeMinusState;
+  if(changeTimeMinusLastState && changeTimeMinusStateIsNotPressed){
+    minusPressed();
+  }
+  changeTimeMinusLastState = changeTimeMinusState;
+  
 }
 
 void loop() {
