@@ -18,9 +18,9 @@ unsigned int minutes = 59;
 unsigned int hours = 23;
 int delta;
 
-boolean changingHoursValue = true;
-boolean changingMinutesValue = true;
-boolean changingSecondsValue = true;
+boolean changingHoursValue = false;
+boolean changingMinutesValue = false;
+boolean changingSecondsValue = false;
 int lastSecond = 0;
 
 LiquidCrystal lcd(RS, RW, ENABLE, D4, D5, D6 ,D7);
@@ -85,7 +85,40 @@ void displayTime(){
   }
 }
 
+boolean changeTimeButtonLastState = false;
+
+void changeTimeButtonReleased(){
+  if(changingHoursValue || changingMinutesValue || changingSecondsValue){
+    if(changingHoursValue){
+      changingHoursValue = false;
+      changingMinutesValue = true;
+      return;
+    }
+    if(changingMinutesValue){
+      changingMinutesValue = false;
+      changingSecondsValue = true;
+      return;
+    }
+    if(changingSecondsValue){
+      changingSecondsValue = false;
+      return;
+    }
+  }else{
+    changingHoursValue = true;
+  }
+}
+
+void checkButtons(){
+  boolean changeTimeButtonState = digitalRead(CHANGE_TIME_BUTTON_PORT);
+  boolean changeTimeButtonStateIsNotPressed = !changeTimeButtonState;
+  if(changeTimeButtonLastState && changeTimeButtonStateIsNotPressed){
+    changeTimeButtonReleased();
+  }
+  changeTimeButtonLastState = changeTimeButtonState;
+}
+
 void loop() {
   calculateTime();
   displayTime();
+  checkButtons();
 }
