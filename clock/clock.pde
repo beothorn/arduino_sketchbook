@@ -9,8 +9,8 @@
 #define D7 13
 
 #define CHANGE_TIME_BUTTON_PORT 6
-#define CHANGE_TIME_MINUS 5
-#define CHANGE_TIME_PLUS 4
+#define CHANGE_TIME_PLUS 5
+#define BUZZER 5
 
 #define BLINKING_INTERVAL_IN_MILLIS 500
 
@@ -28,9 +28,13 @@ LiquidCrystal lcd(RS, RW, ENABLE, D4, D5, D6 ,D7);
 
 void setup(){
   pinMode(CHANGE_TIME_BUTTON_PORT,INPUT);
-  pinMode(CHANGE_TIME_MINUS,INPUT);
   pinMode(CHANGE_TIME_PLUS,INPUT);
+  pinMode(BUZZER,OUTPUT);
   Serial.begin(9600);
+}
+
+void buzz(boolean play){
+  digitalWrite(BUZZER,play);
 }
 
 boolean isTimeValueBeingChanged(){
@@ -160,19 +164,6 @@ void normalizeClockAndPrint(){
   printTime();
 }
 
-void minusPressed(){
-  if(changingHoursValue){
-    hours--;
-  }
-  if(changingMinutesValue){
-    minutes--;
-  }
-  if(changingSecondsValue){
-    seconds--;
-  }
-  normalizeClockAndPrint();
-}
-
 void plusPressed(){
   if(changingHoursValue){
     hours++;
@@ -198,20 +189,14 @@ void checkButtons(){
   }
   changeTimeButtonLastState = changeTimeButtonState;
   
-  boolean changeTimePlusState = digitalRead(CHANGE_TIME_PLUS);
+  boolean changeTimePlusState = analogRead(CHANGE_TIME_PLUS)>0;
   boolean changeTimePlusStateIsNotPressed = !changeTimePlusState;
   if(changeTimePlusLastState && changeTimePlusStateIsNotPressed){
     plusPressed();
   }
   changeTimePlusLastState = changeTimePlusState;
   
-  boolean changeTimeMinusState = digitalRead(CHANGE_TIME_MINUS);
-  boolean changeTimeMinusStateIsNotPressed = !changeTimeMinusState;
-  if(changeTimeMinusLastState && changeTimeMinusStateIsNotPressed){
-    minusPressed();
-  }
-  changeTimeMinusLastState = changeTimeMinusState;
-  
+  buzz(changeTimeButtonState || changeTimePlusState);
 }
 
 void loop() {
