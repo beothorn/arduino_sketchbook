@@ -12,12 +12,11 @@
 #define CHANGE_TIME_MINUS 5
 #define CHANGE_TIME_PLUS 4
 
-long previous_millis_value;
-long current_millis_value;
+#define BLINKING_INTERVAL_IN_MILLIS 500
 
-unsigned int seconds = 55;
-unsigned int minutes = 59;
-unsigned int hours = 23;
+int seconds = 0;
+int minutes = 0;
+int hours = 0;
 int delta;
 
 boolean changingHoursValue = false;
@@ -34,10 +33,17 @@ void setup(){
   Serial.begin(9600);
 }
 
+boolean isTimeValueBeingChanged(){
+  return changingHoursValue || changingMinutesValue || changingSecondsValue; 
+}
+
 void calculateTime(){
+  static long previous_millis_value;
+  static long current_millis_value;
   current_millis_value = millis();
   delta += current_millis_value - previous_millis_value; // should work even when millis rolls over
-  seconds += delta / 1000;
+  if(!isTimeValueBeingChanged())
+    seconds += delta / 1000;
   delta = delta % 1000;
   minutes += seconds / 60;
   seconds = seconds % 60;
@@ -60,15 +66,27 @@ void printIntWithTwoDigits(int number){
   lcd.print(strOut);
 }
 
-void printTimeValue(int displayTime, boolean blinking){
-  if(blinking){
-    if(seconds % 2){
-      printIntWithTwoDigits(displayTime);
-    }else{
-      lcd.print("  ");
-    }
+boolean blinkStateChanged(){
+  static boolean lastState = false;
+  boolean currentBlinkingState = getBlinkingState();
+  if(currentBlinkingState != lastState){
+    lastState = currentBlinkingState;
+    return true;
+  }
+  return false;
+}
+
+boolean getBlinkingState(){
+  int timeCount = millis() % BLINKING_INTERVAL_IN_MILLIS*2;
+  return (timeCount>=BLINKING_INTERVAL_IN_MILLIS);
+}
+
+void printTimeValue(int displayTimeIfTimeNeedsRedisplay, boolean blinking){
+  boolean showing = getBlinkingState();
+  if(blinking && !showing){
+    lcd.print("  ");
   }else{
-    printIntWithTwoDigits(displayTime);
+    printIntWithTwoDigits(displayTimeIfTimeNeedsRedisplay);
   }
 }
 
@@ -79,18 +97,31 @@ void printTimeOnLcd(int displayHour, int displayMinute, int displaySeconds){
   printTimeValue(displayMinute, changingMinutesValue);
   lcd.print(":");
   printTimeValue(displaySeconds, changingSecondsValue);
+}
+
+void printTime(){
+  printTimeOnLcd(hours,minutes,seconds);
+}
+
+boolean timeNeedsRedisplay(){
+  boolean needsUpdateBlink = isTimeValueBeingChanged() && blinkStateChanged();
+  boolean timeChanged = lastSecond != seconds;
+  return needsUpdateBlink || timeChanged;
+}
+
+void updateTime(){
   lastSecond = seconds;
 }
 
-void displayTime(){
-  boolean time_changed = lastSecond != seconds; 
-  if(time_changed){
-    printTimeOnLcd(hours,minutes,seconds);
+void displayTimeIfTimeNeedsRedisplay(){
+  if(timeNeedsRedisplay()){
+    printTime();
+    updateTime();
   }
 }
 
 void changeTimeButtonReleased(){
-  if(changingHoursValue || changingMinutesValue || changingSecondsValue){
+  if(isTimeValueBeingChanged()){
     if(changingHoursValue){
       changingHoursValue = false;
       changingMinutesValue = true;
@@ -110,10 +141,23 @@ void changeTimeButtonReleased(){
   }
 }
 
-void normalizeClock(){
-  seconds = seconds % 60;
-  hours = hours % 24;
-  minutes = minutes % 60;
+void normalizeClockAndPrint(){
+  if(seconds<0)
+    seconds = 59;
+  if(seconds>=60)
+    seconds = 0;
+    
+  if(minutes<0)
+    minutes = 59;
+  if(minutes>=60)
+    minutes = 0;
+  
+  if(hours<0)
+    hours = 23;
+  if(hours>=24)
+    hours = 0; 
+    
+  printTime();
 }
 
 void minusPressed(){
@@ -126,7 +170,7 @@ void minusPressed(){
   if(changingSecondsValue){
     seconds--;
   }
-  normalizeClock();
+  normalizeClockAndPrint();
 }
 
 void plusPressed(){
@@ -139,13 +183,14 @@ void plusPressed(){
   if(changingSecondsValue){
     seconds++;
   }
-  normalizeClock();
+  normalizeClockAndPrint();
 }
 
-boolean changeTimeButtonLastState = false;
-boolean changeTimeMinusLastState = false;
-boolean changeTimePlusLastState = false;
 void checkButtons(){
+  static boolean changeTimeButtonLastState = false;
+  static boolean changeTimeMinusLastState = false;
+  static boolean changeTimePlusLastState = false;
+  
   boolean changeTimeButtonState = digitalRead(CHANGE_TIME_BUTTON_PORT);
   boolean changeTimeButtonStateIsNotPressed = !changeTimeButtonState;
   if(changeTimeButtonLastState && changeTimeButtonStateIsNotPressed){
@@ -171,6 +216,6 @@ void checkButtons(){
 
 void loop() {
   calculateTime();
-  displayTime();
+  displayTimeIfTimeNeedsRedisplay();
   checkButtons();
 }
