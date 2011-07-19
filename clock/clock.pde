@@ -8,9 +8,12 @@
 #define D6 12
 #define D7 13
 
-#define CHANGE_TIME_BUTTON_PORT 6
-#define CHANGE_TIME_PLUS 5
-#define BUZZER 5
+#define CHANGE_TIME_BUTTON_PORT 5
+#define CHANGE_TIME_PLUS 4
+#define CHANGE_TIME_MINUS 3
+#define BUZZER 6
+#define DISPLAY_SECONDS false
+
 
 #define BLINKING_INTERVAL_IN_MILLIS 500
 
@@ -21,7 +24,6 @@ int delta;
 
 boolean changingHoursValue = false;
 boolean changingMinutesValue = false;
-boolean changingSecondsValue = false;
 int lastSecond = 0;
 
 LiquidCrystal lcd(RS, RW, ENABLE, D4, D5, D6 ,D7);
@@ -38,7 +40,7 @@ void buzz(boolean play){
 }
 
 boolean isTimeValueBeingChanged(){
-  return changingHoursValue || changingMinutesValue || changingSecondsValue; 
+  return changingHoursValue || changingMinutesValue; 
 }
 
 void calculateTime(){
@@ -94,13 +96,22 @@ void printTimeValue(int displayTimeIfTimeNeedsRedisplay, boolean blinking){
   }
 }
 
+void printTimeSeparator(){
+  if((seconds % 2) || isTimeValueBeingChanged())
+    lcd.print(":");
+  else
+    lcd.print(" ");
+}
+
 void printTimeOnLcd(int displayHour, int displayMinute, int displaySeconds){
   lcd.clear();
   printTimeValue(displayHour, changingHoursValue);
-  lcd.print(":");
+  printTimeSeparator();
   printTimeValue(displayMinute, changingMinutesValue);
-  lcd.print(":");
-  printTimeValue(displaySeconds, changingSecondsValue);
+  if(DISPLAY_SECONDS){
+    printTimeSeparator();
+    printTimeValue(displaySeconds, false);
+  }
 }
 
 void printTime(){
@@ -133,11 +144,7 @@ void changeTimeButtonReleased(){
     }
     if(changingMinutesValue){
       changingMinutesValue = false;
-      changingSecondsValue = true;
-      return;
-    }
-    if(changingSecondsValue){
-      changingSecondsValue = false;
+      seconds = 0;
       return;
     }
   }else{
@@ -164,15 +171,22 @@ void normalizeClockAndPrint(){
   printTime();
 }
 
+void minusPressed(){
+  if(changingHoursValue){
+    hours--;
+  }
+  if(changingMinutesValue){
+    minutes--;
+  }
+  normalizeClockAndPrint();
+}
+
 void plusPressed(){
   if(changingHoursValue){
     hours++;
   }
   if(changingMinutesValue){
     minutes++;
-  }
-  if(changingSecondsValue){
-    seconds++;
   }
   normalizeClockAndPrint();
 }
@@ -182,21 +196,29 @@ void checkButtons(){
   static boolean changeTimeMinusLastState = false;
   static boolean changeTimePlusLastState = false;
   
-  boolean changeTimeButtonState = digitalRead(CHANGE_TIME_BUTTON_PORT);
+  boolean changeTimeButtonState = analogRead(CHANGE_TIME_BUTTON_PORT)>10;
   boolean changeTimeButtonStateIsNotPressed = !changeTimeButtonState;
   if(changeTimeButtonLastState && changeTimeButtonStateIsNotPressed){
     changeTimeButtonReleased();
   }
   changeTimeButtonLastState = changeTimeButtonState;
   
-  boolean changeTimePlusState = analogRead(CHANGE_TIME_PLUS)>0;
+  
+  boolean changeTimePlusState = analogRead(CHANGE_TIME_PLUS)>10;
   boolean changeTimePlusStateIsNotPressed = !changeTimePlusState;
   if(changeTimePlusLastState && changeTimePlusStateIsNotPressed){
     plusPressed();
   }
   changeTimePlusLastState = changeTimePlusState;
   
-  buzz(changeTimeButtonState || changeTimePlusState);
+  boolean changeTimeMinusState = analogRead(CHANGE_TIME_MINUS)>10;
+  boolean changeTimeMinusStateIsNotPressed = !changeTimeMinusState;
+  if(changeTimeMinusLastState && changeTimeMinusStateIsNotPressed){
+    minusPressed();
+  }
+  changeTimeMinusLastState = changeTimeMinusState;
+  
+  buzz(changeTimeButtonState || changeTimePlusState || changeTimeMinusState);
 }
 
 void loop() {
