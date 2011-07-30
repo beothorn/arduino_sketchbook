@@ -12,6 +12,17 @@ public:
     _seconds = seconds % 60;
   }
   
+  void addSecond(){
+    _seconds++;
+    _seconds = _seconds % 60;
+  }
+  
+  void decreaseSecond(){
+    _seconds--;
+    if(_seconds<0)
+      _seconds = 59;
+  }
+  
   int getMinutes()
   {
     return _minutes;
@@ -19,6 +30,17 @@ public:
   
   void setMinutes(int minutes){
     _minutes = minutes % 60;
+  }
+
+  void addMinute(){
+    _minutes++;
+    _minutes = _minutes % 60;
+  }
+  
+  void decreaseMinute(){
+    _minutes--;
+    if(_minutes<0)
+      _minutes = 59;
   }
   
   int getHours()
@@ -28,6 +50,36 @@ public:
   
   void setHours(int hours){
     _hours = hours % 24;
+  }
+  
+  void addHour(){
+    _hours++;
+    _hours = _hours % 24;
+  }
+  
+  void decreaseHour(){
+    _hours--;
+    if(_hours<0)
+      _hours = 23;
+  }
+  
+  void updateTimeForDelta(int delta){
+    _seconds += delta / 1000;
+    _minutes += _seconds / 60;
+    _seconds = _seconds % 60;
+    _hours += _minutes / 60;
+    _minutes = _minutes % 60;
+    _hours = _hours % 24;
+  }
+  
+  void asString(char strOut[6])
+  {
+    strOut[0] = '0' + (_hours / 10);
+    strOut[1] = '0' + (_hours % 10);
+    strOut[3] = ':';
+    strOut[4] = '0' + (_minutes / 10);
+    strOut[5] = '0' + (_minutes % 10);
+    strOut[6] = '\0';
   }
   
 private:

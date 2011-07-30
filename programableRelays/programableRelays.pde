@@ -20,13 +20,11 @@
 #define BUTTON_PRESSED_CURRENT 1020
 
 Clock clock = Clock();
-int seconds=0;
-int minutes=0;
-int hours=0;
 int delta=0;
 
 boolean changingHoursValue = false;
 boolean changingMinutesValue = false;
+
 int lastSecond = 0;
 
 LiquidCrystal lcd(RS, RW, ENABLE, D4, D5, D6 ,D7);
@@ -54,13 +52,8 @@ void calculateTime(){
   if(isTimeValueBeingChanged()){
     return;
   }
-  seconds += delta / 1000;
+  clock.updateTimeForDelta(delta);
   delta = delta % 1000;
-  minutes += seconds / 60;
-  seconds = seconds % 60;
-  hours += minutes / 60;
-  hours = hours % 24;
-  minutes = minutes % 60;
   previous_millis_value = current_millis_value;
 }
 
@@ -102,7 +95,7 @@ void printTimeValue(int displayTimeIfTimeNeedsRedisplay, boolean blinking){
 }
 
 void printTimeSeparator(){
-  if((seconds % 2) || isTimeValueBeingChanged())
+  if((clock.getSeconds() % 2) || isTimeValueBeingChanged())
     lcd.print(":");
   else
     lcd.print(" ");
@@ -120,17 +113,17 @@ void printTimeOnLcd(int displayHour, int displayMinute, int displaySeconds){
 }
 
 void printTime(){
-  printTimeOnLcd(hours,minutes,seconds);
+  printTimeOnLcd(clock.getHours(),clock.getMinutes(),clock.getSeconds());
 }
 
 boolean timeNeedsRedisplay(){
   boolean needsUpdateBlink = isTimeValueBeingChanged() && blinkStateChanged();
-  boolean timeChanged = lastSecond != seconds;
+  boolean timeChanged = lastSecond != clock.getSeconds();
   return needsUpdateBlink || timeChanged;
 }
 
 void updateTime(){
-  lastSecond = seconds;
+  lastSecond = clock.getSeconds();
 }
 
 void displayTimeIfTimeNeedsRedisplay(){
@@ -149,7 +142,7 @@ void changeTimeButtonReleased(){
     }
     if(changingMinutesValue){
       changingMinutesValue = false;
-      seconds = 0;
+      clock.setSeconds(0);
       return;
     }
   }else{
@@ -157,41 +150,26 @@ void changeTimeButtonReleased(){
   }
 }
 
-void normalizeClockAndPrint(){
-  if(seconds<0)
-    seconds = 59;
-  if(seconds>=60)
-    seconds = 0;
-    
-  if(minutes<0)
-    minutes = 59;
-  if(minutes>=60)
-    minutes = 0;
-  
-  if(hours<0)
-    hours = 23;
-  if(hours>=24)
-    hours = 0; 
-    
+void normalizeClockAndPrint(){    
   printTime();
 }
 
 void minusPressed(){
   if(changingHoursValue){
-    hours--;
+    clock.decreaseHour();
   }
   if(changingMinutesValue){
-    minutes--;
+    clock.decreaseMinute();
   }
   normalizeClockAndPrint();
 }
 
 void plusPressed(){
   if(changingHoursValue){
-    hours++;
+    clock.addHour();
   }
   if(changingMinutesValue){
-    minutes++;
+    clock.addMinute();
   }
   normalizeClockAndPrint();
 }
