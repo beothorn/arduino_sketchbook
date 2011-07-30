@@ -1,4 +1,5 @@
 #include <LiquidCrystal.h>
+#include "clock.h"
 
 #define RS 7
 #define RW 8
@@ -16,11 +17,13 @@
 
 
 #define BLINKING_INTERVAL_IN_MILLIS 500
+#define BUTTON_PRESSED_CURRENT 1020
 
-int seconds = 0;
-int minutes = 0;
-int hours = 0;
-int delta;
+Clock clock = Clock();
+int seconds=0;
+int minutes=0;
+int hours=0;
+int delta=0;
 
 boolean changingHoursValue = false;
 boolean changingMinutesValue = false;
@@ -48,8 +51,10 @@ void calculateTime(){
   static long current_millis_value;
   current_millis_value = millis();
   delta += current_millis_value - previous_millis_value; // should work even when millis rolls over
-  if(!isTimeValueBeingChanged())
-    seconds += delta / 1000;
+  if(isTimeValueBeingChanged()){
+    return;
+  }
+  seconds += delta / 1000;
   delta = delta % 1000;
   minutes += seconds / 60;
   seconds = seconds % 60;
@@ -191,12 +196,16 @@ void plusPressed(){
   normalizeClockAndPrint();
 }
 
+boolean readAnalogAsDigital(int port){
+  return analogRead(port)>BUTTON_PRESSED_CURRENT;
+}
+
 void checkButtons(){
   static boolean changeTimeButtonLastState = false;
   static boolean changeTimeMinusLastState = false;
   static boolean changeTimePlusLastState = false;
   
-  boolean changeTimeButtonState = analogRead(CHANGE_TIME_BUTTON_PORT)>10;
+  boolean changeTimeButtonState = readAnalogAsDigital(CHANGE_TIME_BUTTON_PORT);
   boolean changeTimeButtonStateIsNotPressed = !changeTimeButtonState;
   if(changeTimeButtonLastState && changeTimeButtonStateIsNotPressed){
     changeTimeButtonReleased();
@@ -204,14 +213,14 @@ void checkButtons(){
   changeTimeButtonLastState = changeTimeButtonState;
   
   
-  boolean changeTimePlusState = analogRead(CHANGE_TIME_PLUS)>10;
+  boolean changeTimePlusState = readAnalogAsDigital(CHANGE_TIME_PLUS);
   boolean changeTimePlusStateIsNotPressed = !changeTimePlusState;
   if(changeTimePlusLastState && changeTimePlusStateIsNotPressed){
     plusPressed();
   }
   changeTimePlusLastState = changeTimePlusState;
   
-  boolean changeTimeMinusState = analogRead(CHANGE_TIME_MINUS)>10;
+  boolean changeTimeMinusState = readAnalogAsDigital(CHANGE_TIME_MINUS);
   boolean changeTimeMinusStateIsNotPressed = !changeTimeMinusState;
   if(changeTimeMinusLastState && changeTimeMinusStateIsNotPressed){
     minusPressed();
