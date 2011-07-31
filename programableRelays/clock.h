@@ -82,6 +82,22 @@ public:
     strOut[6] = '\0';
   }
   
+  bool equals(Clock otherClock){
+    if(_minutes != otherClock.getMinutes()){
+      return false;
+    }
+    if(_hours != otherClock.getHours()){
+      return false;
+    }
+    return true;
+  }
+  
+  void copy(Clock otherClock){
+    _seconds = otherClock.getSeconds();
+    _minutes = otherClock.getMinutes();
+    _hours = otherClock.getHours();
+  }
+  
 private:
   int _seconds;
   int _minutes;

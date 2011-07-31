@@ -20,12 +20,11 @@
 #define BUTTON_PRESSED_CURRENT 1020
 
 Clock clock = Clock();
+Clock lastClock = Clock();
 int delta=0;
 
 boolean changingHoursValue = false;
 boolean changingMinutesValue = false;
-
-int lastSecond = 0;
 
 LiquidCrystal lcd(RS, RW, ENABLE, D4, D5, D6 ,D7);
 
@@ -118,12 +117,12 @@ void printTime(){
 
 boolean timeNeedsRedisplay(){
   boolean needsUpdateBlink = isTimeValueBeingChanged() && blinkStateChanged();
-  boolean timeChanged = lastSecond != clock.getSeconds();
+  boolean timeChanged = clock.equals(lastClock);
   return needsUpdateBlink || timeChanged;
 }
 
 void updateTime(){
-  lastSecond = clock.getSeconds();
+  lastClock.copy(clock);
 }
 
 void displayTimeIfTimeNeedsRedisplay(){
