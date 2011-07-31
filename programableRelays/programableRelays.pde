@@ -1,5 +1,6 @@
 #include <LiquidCrystal.h>
 #include "clock.h"
+#include "clockPrinter.h"
 
 #define RS 7
 #define RW 8
@@ -15,18 +16,16 @@
 #define BUZZER 6
 #define DISPLAY_SECONDS false
 
-
-#define BLINKING_INTERVAL_IN_MILLIS 500
 #define BUTTON_PRESSED_CURRENT 1020
 
 Clock clock = Clock();
-Clock lastClock = Clock();
 int delta=0;
 
 boolean changingHoursValue = false;
 boolean changingMinutesValue = false;
 
 LiquidCrystal lcd(RS, RW, ENABLE, D4, D5, D6 ,D7);
+ClockPrinter printer = ClockPrinter(&lcd);
 
 void setup(){
   pinMode(CHANGE_TIME_BUTTON_PORT,INPUT);
@@ -56,80 +55,8 @@ void calculateTime(){
   previous_millis_value = current_millis_value;
 }
 
-void formatTimeDigits(char strOut[3], int num)
-{
-  strOut[0] = '0' + (num / 10);
-  strOut[1] = '0' + (num % 10);
-  strOut[2] = '\0';
-}
-
-void printIntWithTwoDigits(int number){
-  char strOut[3];
-  formatTimeDigits(strOut, number);
-  lcd.print(strOut);
-}
-
-boolean blinkStateChanged(){
-  static boolean lastState = false;
-  boolean currentBlinkingState = getBlinkingState();
-  if(currentBlinkingState != lastState){
-    lastState = currentBlinkingState;
-    return true;
-  }
-  return false;
-}
-
-boolean getBlinkingState(){
-  int timeCount = millis() % BLINKING_INTERVAL_IN_MILLIS*2;
-  return (timeCount>=BLINKING_INTERVAL_IN_MILLIS);
-}
-
-void printTimeValue(int displayTimeIfTimeNeedsRedisplay, boolean blinking){
-  boolean showing = getBlinkingState();
-  if(blinking && !showing){
-    lcd.print("  ");
-  }else{
-    printIntWithTwoDigits(displayTimeIfTimeNeedsRedisplay);
-  }
-}
-
-void printTimeSeparator(){
-  if((clock.getSeconds() % 2) || isTimeValueBeingChanged())
-    lcd.print(":");
-  else
-    lcd.print(" ");
-}
-
-void printTimeOnLcd(int displayHour, int displayMinute, int displaySeconds){
-  lcd.clear();
-  printTimeValue(displayHour, changingHoursValue);
-  printTimeSeparator();
-  printTimeValue(displayMinute, changingMinutesValue);
-  if(DISPLAY_SECONDS){
-    printTimeSeparator();
-    printTimeValue(displaySeconds, false);
-  }
-}
-
-void printTime(){
-  printTimeOnLcd(clock.getHours(),clock.getMinutes(),clock.getSeconds());
-}
-
-boolean timeNeedsRedisplay(){
-  boolean needsUpdateBlink = isTimeValueBeingChanged() && blinkStateChanged();
-  boolean timeChanged = clock.equals(lastClock);
-  return needsUpdateBlink || timeChanged;
-}
-
-void updateTime(){
-  lastClock.copy(clock);
-}
-
-void displayTimeIfTimeNeedsRedisplay(){
-  if(timeNeedsRedisplay()){
-    printTime();
-    updateTime();
-  }
+void displayTime(){
+  printer.printClock(clock);
 }
 
 void changeTimeButtonReleased(){
@@ -137,20 +64,22 @@ void changeTimeButtonReleased(){
     if(changingHoursValue){
       changingHoursValue = false;
       changingMinutesValue = true;
+      printer.stopBlinkingHours();
+      printer.startBlinkingMinutes();
       return;
     }
     if(changingMinutesValue){
       changingMinutesValue = false;
       clock.setSeconds(0);
+      printer.stopBlinkingMinutes();
+      printer.startBlinkingSeparator();
       return;
     }
   }else{
     changingHoursValue = true;
+    printer.startBlinkingHours();
+    printer.stopBlinkingSeparator();
   }
-}
-
-void normalizeClockAndPrint(){    
-  printTime();
 }
 
 void minusPressed(){
@@ -160,7 +89,7 @@ void minusPressed(){
   if(changingMinutesValue){
     clock.decreaseMinute();
   }
-  normalizeClockAndPrint();
+  displayTime();
 }
 
 void plusPressed(){
@@ -170,7 +99,7 @@ void plusPressed(){
   if(changingMinutesValue){
     clock.addMinute();
   }
-  normalizeClockAndPrint();
+  displayTime();
 }
 
 boolean readAnalogAsDigital(int port){
@@ -209,6 +138,6 @@ void checkButtons(){
 
 void loop() {
   calculateTime();
-  displayTimeIfTimeNeedsRedisplay();
+  displayTime();
   checkButtons();
 }

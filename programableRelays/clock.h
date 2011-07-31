@@ -72,14 +72,24 @@ public:
     _hours = _hours % 24;
   }
   
-  void asString(char strOut[6])
+  void toString(char strOut[6])
   {
-    strOut[0] = '0' + (_hours / 10);
-    strOut[1] = '0' + (_hours % 10);
-    strOut[3] = ':';
-    strOut[4] = '0' + (_minutes / 10);
-    strOut[5] = '0' + (_minutes % 10);
-    strOut[6] = '\0';
+    if(_hours<10){
+      strOut[0] = '0';
+      strOut[1] = (_hours % 10)+48;
+    }else{
+      strOut[0] = (_hours / 10)+48;
+      strOut[1] = (_hours % 10)+48;
+    }
+    strOut[2] = ':';
+    if(_minutes<10){
+      strOut[3] = '0';
+      strOut[4] = (_minutes % 10)+48;
+    }else{
+      strOut[3] = (_minutes / 10)+48;
+      strOut[4] = (_minutes % 10)+48;
+    }
+    strOut[5] = '\0';
   }
   
   bool equals(Clock otherClock){
