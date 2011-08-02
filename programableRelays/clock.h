@@ -92,20 +92,20 @@ public:
     strOut[5] = '\0';
   }
   
-  bool equals(Clock otherClock){
-    if(_minutes != otherClock.getMinutes()){
+  bool equals(Clock *otherClock){
+    if(_minutes != otherClock->getMinutes()){
       return false;
     }
-    if(_hours != otherClock.getHours()){
+    if(_hours != otherClock->getHours()){
       return false;
     }
     return true;
   }
   
-  void copy(Clock otherClock){
-    _seconds = otherClock.getSeconds();
-    _minutes = otherClock.getMinutes();
-    _hours = otherClock.getHours();
+  void copy(Clock *otherClock){
+    _seconds = otherClock->getSeconds();
+    _minutes = otherClock->getMinutes();
+    _hours = otherClock->getHours();
   }
   
 private:

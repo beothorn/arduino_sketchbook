@@ -1,6 +1,7 @@
 #include <LiquidCrystal.h>
 #include "clock.h"
 #include "clockPrinter.h"
+#include "clockState.h"
 
 #define RS 7
 #define RW 8
@@ -14,7 +15,6 @@
 #define CHANGE_TIME_PLUS 4
 #define CHANGE_TIME_MINUS 3
 #define BUZZER 6
-#define DISPLAY_SECONDS false
 
 #define BUTTON_PRESSED_CURRENT 1020
 
@@ -25,7 +25,7 @@ boolean changingHoursValue = false;
 boolean changingMinutesValue = false;
 
 LiquidCrystal lcd(RS, RW, ENABLE, D4, D5, D6 ,D7);
-ClockPrinter printer = ClockPrinter(&lcd);
+ClockState clockState = ClockState(&clock,lcd);
 
 void setup(){
   pinMode(CHANGE_TIME_BUTTON_PORT,INPUT);
@@ -55,51 +55,16 @@ void calculateTime(){
   previous_millis_value = current_millis_value;
 }
 
-void displayTime(){
-  printer.printClock(clock);
-}
-
-void changeTimeButtonReleased(){
-  if(isTimeValueBeingChanged()){
-    if(changingHoursValue){
-      changingHoursValue = false;
-      changingMinutesValue = true;
-      printer.stopBlinkingHours();
-      printer.startBlinkingMinutes();
-      return;
-    }
-    if(changingMinutesValue){
-      changingMinutesValue = false;
-      clock.setSeconds(0);
-      printer.stopBlinkingMinutes();
-      printer.startBlinkingSeparator();
-      return;
-    }
-  }else{
-    changingHoursValue = true;
-    printer.startBlinkingHours();
-    printer.stopBlinkingSeparator();
-  }
+void setPressed(){
+  clockState.setPressed();
 }
 
 void minusPressed(){
-  if(changingHoursValue){
-    clock.decreaseHour();
-  }
-  if(changingMinutesValue){
-    clock.decreaseMinute();
-  }
-  displayTime();
+  clockState.minusPressed();
 }
 
 void plusPressed(){
-  if(changingHoursValue){
-    clock.addHour();
-  }
-  if(changingMinutesValue){
-    clock.addMinute();
-  }
-  displayTime();
+  clockState.plusPressed();
 }
 
 boolean readAnalogAsDigital(int port){
@@ -114,7 +79,7 @@ void checkButtons(){
   boolean changeTimeButtonState = readAnalogAsDigital(CHANGE_TIME_BUTTON_PORT);
   boolean changeTimeButtonStateIsNotPressed = !changeTimeButtonState;
   if(changeTimeButtonLastState && changeTimeButtonStateIsNotPressed){
-    changeTimeButtonReleased();
+    setPressed();
   }
   changeTimeButtonLastState = changeTimeButtonState;
   
@@ -134,6 +99,10 @@ void checkButtons(){
   changeTimeMinusLastState = changeTimeMinusState;
   
   buzz(changeTimeButtonState || changeTimePlusState || changeTimeMinusState);
+}
+
+void displayTime(){
+  clockState.printState();
 }
 
 void loop() {

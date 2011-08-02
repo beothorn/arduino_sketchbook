@@ -42,28 +42,29 @@ public:
     return (timeCount>=BLINKING_INTERVAL_IN_MILLIS);
   }
   
-  void printClock(Clock clock)
-  {
-   
+  void printClock(Clock *clock)
+  {     
     bool blinkingState = getBlinkingState();
     if(_lastClockPrinted.equals(clock) && blinkingState==_lastBlinkingState){
       return;
     }
     _lastBlinkingState = blinkingState;
     char strOut[6];
-    clock.toString(strOut);
+    clock->toString(strOut);
    
     if(_blinkHours && blinkingState){
       strOut[0] =' ';
       strOut[1] =' ';
     }
-    if(_blinkSeparator && clock.getSeconds() % 2){
+    if(_blinkSeparator && clock->getSeconds() % 2){
       strOut[2] = ' ';
     }
     if(_blinkMinutes && blinkingState){
       strOut[3] =' ';
       strOut[4] =' ';
     }
+    clock->setSeconds(5);
+    Serial.println(_lastClockPrinted.getSeconds());
     _printTarget->clear();
     _printTarget->print(strOut);
     _lastClockPrinted.copy(clock);
