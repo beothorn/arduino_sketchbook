@@ -1,4 +1,6 @@
+#include <LiquidCrystal.h>
 #include "IRremote.h"
+
 IRsend irsend;
 
 #define NBITS 32
@@ -37,6 +39,22 @@ IRsend irsend;
 
 #define ENTER               0xE0E016E9
 
+#define RS     4
+#define RW     5
+#define ENABLE 6
+#define D4     7
+#define D5     8
+#define D6     9
+#define D7     10
+
+LiquidCrystal lcd(RS, RW, ENABLE, D4, D5, D6 ,D7);
+
+#define INT_SIZE 32767
+#define MAX_IR_SIGNAL_ARRAY_SIZE 100
+#define ARRAY_TERMINATOR -1
+
+String row1,row2;
+
 unsigned long commands[COMMAND_COUNT] =
 {
     POWER,     
@@ -48,9 +66,27 @@ unsigned long commands[COMMAND_COUNT] =
     VOLUMEDOWN
 };
 
+void updateDisplay(){
+  lcd.clear();
+  lcd.setCursor(0,0);
+  lcd.print(row1);
+  lcd.setCursor(0,1);
+  lcd.print(row2);
+}
+
+void lineBreak(){
+  row2 = row1;
+  row1 = String("");
+  updateDisplay();
+}
+
 void setup()
 {
   Serial.begin(BAUD_RATE);
+  row1 = String(":)");
+  row2 = String(":P");
+  lcd.begin(16,2);
+  updateDisplay();
 }
 
 void doCommandWithDelay(unsigned long command,int delayBetweenCommands){
@@ -75,10 +111,16 @@ void doCommand(unsigned long command){
 
 void loop() {
   if (Serial.available() > 0) {
-    int inByte = Serial.read()-1;
+    int byteRead = Serial.read();
+    int inByte = byteRead-1;
+    char byteReadAsChar = byteRead;
+    if(byteReadAsChar == '\n'){
+       lineBreak();
+       return;
+    }
     if(inByte>COMMAND_COUNT){
-      Serial.print("Unknown command code: ");
-      Serial.println(inByte);
+      row1 = row1 + byteReadAsChar;
+      updateDisplay();
       return;
     }
     doCommand(commands[inByte]);
