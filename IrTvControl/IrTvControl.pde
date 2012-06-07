@@ -1,6 +1,8 @@
 #include <LiquidCrystal.h>
 #include "IRremote.h"
 
+//infrared led on port 3
+
 IRsend irsend;
 
 #define NBITS 32
@@ -87,6 +89,8 @@ void setup()
   row2 = String(":P");
   lcd.begin(16,2);
   updateDisplay();
+  pinMode(11,OUTPUT);
+  digitalWrite(11,HIGH);
 }
 
 void doCommandWithDelay(unsigned long command,int delayBetweenCommands){
@@ -109,8 +113,18 @@ void doCommand(unsigned long command){
   doCommandWithDelay(command,0);
 }
 
+unsigned long lastTime = 0;
+unsigned long lightTime = 10000;
+
 void loop() {
+  unsigned long time = millis();
+  if(time - lastTime > lightTime){
+    digitalWrite(11,LOW);
+  }
+  
   if (Serial.available() > 0) {
+    digitalWrite(11,HIGH);
+    lastTime = time;
     int byteRead = Serial.read();
     int inByte = byteRead-1;
     char byteReadAsChar = byteRead;
