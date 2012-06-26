@@ -25,23 +25,36 @@ void setup() {
 
 
 void loop() {
-  delay(20);
   chuck.update(); 
+  
+  Serial.print("{");  
+      Serial.print("'r':");  
+      Serial.print(chuck.readRoll());
+    Serial.print(",");  
+ //     Serial.print("'p':");
+ //     Serial.print(chuck.readPitch());
+ //   Serial.print(",");
+ //     Serial.print("'aX':");
+ //     Serial.print((int)chuck.readAccelX()); 
+ //   Serial.print(",");
+ //     Serial.print("'aY':");
+ //     Serial.print((int)chuck.readAccelY());
+ //   Serial.print(",");
+ //     Serial.print("'aZ':");
+ //     Serial.print((int)chuck.readAccelZ()); 
+ //   Serial.print(",");
+      Serial.print("'x':");
+      Serial.print((int)chuck.readJoyX());
+    Serial.print(",");
+      Serial.print("'y':");
+      Serial.print((int)chuck.readJoyY());
+    Serial.print(",");
+      Serial.print("'c':");
+      Serial.print((bool)chuck.buttonC);
+    Serial.print(",");
+      Serial.print("'z':");
+      Serial.print((bool)chuck.buttonZ);
+  Serial.print("}");
 
-
-  Serial.print(chuck.readRoll());
-    Serial.print(", ");  
-  Serial.print(chuck.readPitch());
-    Serial.print(", ");  
-
-    Serial.print((int)chuck.readAccelX()); 
-    Serial.print(", ");  
-    Serial.print((int)chuck.readAccelY()); 
-    Serial.print(", ");  
-
-    Serial.print((int)chuck.readAccelZ()); 
-
-    Serial.println();
-
+  Serial.println();
 }
-
