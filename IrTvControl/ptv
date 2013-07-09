@@ -1,0 +1,21 @@
+#!/usr/bin/python
+import serial
+import sys
+
+options = ["ptv","power","pc","tv","channelup","channeldown","volumeup","volumedown"]
+
+ser = serial.Serial('/dev/ttyUSB0', 9600)
+if len(sys.argv) <= 1:
+	print "Valid arguments"
+	print options	
+	
+for arg in sys.argv:
+	if not "ptv" in arg:
+		print options.index(arg)
+		try:
+			ser.write(chr(options.index(arg)))
+		except ValueError:
+			print "Argument Unknown:"
+			print arg
+			print "Valid arguments"
+			print options	
